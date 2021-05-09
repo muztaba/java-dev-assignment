@@ -3,6 +3,7 @@ package socket.server;
 import socket.io.RequestObject;
 import socket.io.RequestObjectJsonMapper;
 import socket.server.manager.ManagerService;
+import socket.server.manager.ResponseFormatter;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -33,8 +34,7 @@ public class Worker implements Runnable {
         String response;
         try {
             System.out.println("Executing on thread " + Thread.currentThread().getName());
-            String result = String.valueOf(ManagerService.of(requestObject).execute());
-            response = result + " // n = " + requestObject.getArg("n");
+            response = ResponseFormatter.format(ManagerService.of(requestObject).execute(), requestObject);
         } catch (Exception e) {
             e.printStackTrace();
             response = "Execution Error!! message: " + e.getMessage();
