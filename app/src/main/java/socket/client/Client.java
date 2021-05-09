@@ -1,7 +1,6 @@
 package socket.client;
 
 import socket.io.RequestObject;
-import socket.io.RequestObjectJsonMapper;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -19,6 +18,7 @@ public class Client {
     private Socket socket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
+    private SyncIO syncIO;
 
     private Client(String host, int port) {
         this.host = host;
@@ -31,6 +31,7 @@ public class Client {
             System.out.println("Client port is: " + socket.getPort());
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());
+            this.syncIO = SyncIO.of(objectOutputStream, objectInputStream);
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,27 +66,21 @@ public class Client {
             }
 
             requestObject.setArgs(param);
-            send(RequestObjectJsonMapper.writeAsString(requestObject));
-            String reply = received();
-            System.out.println("Reply : " + reply);
+            new Thread(Worker.newWorker(requestObject, syncIO)).start();
             scanner.nextLine(); // consume left over newline
 
             System.out.println("Want to exit? Y/N");
             String isExit = scanner.nextLine();
             if (isExit(isExit)) {
-                send("EXIT");
+                exitClient();
                 socket.close();
                 return;
             }
         }
     }
 
-    private void send(String message) throws IOException {
-        objectOutputStream.writeObject(message);
-    }
-
-    private String received() throws IOException, ClassNotFoundException {
-        return (String) objectInputStream.readObject();
+    private void exitClient() throws IOException {
+        objectOutputStream.writeObject("EXIT");
     }
 
     private boolean isExit(String isExit) {
