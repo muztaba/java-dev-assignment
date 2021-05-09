@@ -2,6 +2,7 @@ package socket.client;
 
 import socket.io.RequestObject;
 import socket.io.Reader;
+import socket.io.RequestObjectJsonMapper;
 import socket.io.Writer;
 
 import java.io.IOException;
@@ -72,7 +73,7 @@ public class Client {
             }
 
             requestObject.setArgs(param);
-            new Thread(Worker.newWorker(requestObject, writer)).start();
+            writer.write(RequestObjectJsonMapper.writeAsString(requestObject));
             scanner.nextLine(); // consume left over newline
 
             System.out.println("Want to exit? Y/N");

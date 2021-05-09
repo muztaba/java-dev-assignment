@@ -6,10 +6,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Writer implements Runnable {
 
-    private LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<String> queue;
     private final ObjectOutputStream objectOutputStream;
 
     public Writer(ObjectOutputStream objectOutputStream) {
+        this.queue = new LinkedBlockingQueue<>();
         this.objectOutputStream = objectOutputStream;
     }
 

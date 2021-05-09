@@ -11,7 +11,6 @@ public class Reader implements Runnable {
         this.objectInputStream = objectInputStream;
     }
 
-
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
