@@ -6,12 +6,20 @@ package socket.server;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import socket.io.RequestObjectJsonMapper;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static socket.utils.TestUtils.createRequestObject;
 
 class AppTest {
     InetAddress host;
@@ -37,7 +45,7 @@ class AppTest {
             // opening new socket for every request here. we can also send multiple requests with one socket.
             Socket socket = new Socket(host.getHostName(), PORT);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            objectOutputStream.writeObject("request # " + i);
+            objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             String message = (String) objectInputStream.readObject();
             System.out.println("Message from server: " + message);
@@ -46,6 +54,62 @@ class AppTest {
             socket.close();
             Thread.sleep(100);
         }
+    }
+
+    @Test
+    void singleSocketMultipleRequest() throws IOException, ClassNotFoundException, InterruptedException {
+        Socket socket = new Socket(host.getHostName(), PORT);
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+
+        objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
+        ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+        String message1 = (String) objectInputStream.readObject();
+        System.out.println("First message from server: " + message1);
+
+        objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
+        String message2 = (String) objectInputStream.readObject();
+        System.out.println("Second message from server: " + message2);
+
+        objectOutputStream.close();
+        objectInputStream.close();
+        socket.close();
+        Thread.sleep(100);
+    }
+
+    @Test
+    void multiThreadedRequest() {
+        Runnable runnable = () -> {
+            try {
+                Socket socket = new Socket(host.getHostName(), PORT);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
+                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+                String message1 = (String) objectInputStream.readObject();
+                System.out.println("First message from server: " + message1);
+                objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
+                String message2 = (String) objectInputStream.readObject();
+                System.out.println("Second message from server: " + message2);
+                objectOutputStream.close();
+                objectInputStream.close();
+                socket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+
+        List<Runnable> runnables = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            runnables.add(runnable);
+        }
+
+        ExecutorService pool = Executors.newFixedThreadPool(10);
+
+        CompletableFuture<?>[] futures = runnables.stream()
+                .map(task -> CompletableFuture.runAsync(task, pool))
+                .toArray(CompletableFuture[]::new);
+
+        CompletableFuture.allOf(futures).join();
+        pool.shutdown();
     }
 
     @AfterEach
