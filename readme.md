@@ -52,4 +52,9 @@ requests object will have 3 parameters.
 
 2. Implement the socket client which will send subsequent requests to server with appropriate request object. **Important:** we can use one socket connection to send multiple requests.  
 
+Instruction
+-----------
+
+- **Server**: [App](app/src/main/java/socket/server/App.java)
+- **Client**: [ClientRunner](app/src/main/java/socket/client/ClientRunner.java)
 
