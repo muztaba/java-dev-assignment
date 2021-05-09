@@ -1,8 +1,5 @@
 package socket.server;
 
-import socket.io.RequestObjectJsonMapper;
-import socket.server.manager.ManagerService;
-
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -33,24 +30,12 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 System.out.println("Message from client: " + requestAsString);
-                String result = execute(requestAsString);
-                objectOutputStream.writeObject(result);
-                objectOutputStream.flush();
+                Worker worker = Worker.newWorker(requestAsString, objectOutputStream);
+                new Thread(worker).start();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String execute(String message) {
-        String result;
-        try {
-            result = String.valueOf(ManagerService.of(RequestObjectJsonMapper.readAsObject(message)).execute());
-        } catch (Exception e) {
-            e.printStackTrace();
-            result = "Execution Error!! message: " + e.getMessage();
-        }
-        return result;
     }
 
     public static ConnectionHandler newConnectionHandler(Socket socket) {

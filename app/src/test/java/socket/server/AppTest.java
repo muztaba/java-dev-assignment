@@ -6,6 +6,7 @@ package socket.server;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import socket.io.RequestObject;
 import socket.io.RequestObjectJsonMapper;
 
 import java.io.IOException;
@@ -61,13 +62,20 @@ class AppTest {
         Socket socket = new Socket(host.getHostName(), PORT);
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 
-        objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
+        RequestObject requestObject = createRequestObject();
+        requestObject.getArgs().put("n", "100000");
+        System.out.println("first arg " + requestObject.getArg("n"));
+        objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(requestObject));
         ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-        String message1 = (String) objectInputStream.readObject();
-        System.out.println("First message from server: " + message1);
 
-        objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(createRequestObject()));
+        RequestObject requestObject2 = createRequestObject();
+        requestObject.getArgs().put("n", "10");
+        System.out.println("second arg " + requestObject2.getArg("n"));
+        objectOutputStream.writeObject(RequestObjectJsonMapper.writeAsString(requestObject2));
+
+        String message1 = (String) objectInputStream.readObject();
         String message2 = (String) objectInputStream.readObject();
+        System.out.println("First message from server: " + message1);
         System.out.println("Second message from server: " + message2);
 
         objectOutputStream.close();

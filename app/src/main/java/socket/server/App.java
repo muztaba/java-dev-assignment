@@ -15,7 +15,7 @@ public class App {
     public void startServerAndAcceptRequest() throws IOException, ClassNotFoundException {
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("Starting socket server");
-        ExecutorService pool = Executors.newFixedThreadPool(1_000);
+        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         while (true) {
             System.out.println("Waiting for the client request");
