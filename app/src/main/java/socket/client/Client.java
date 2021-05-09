@@ -1,14 +1,15 @@
 package socket.client;
 
 import socket.io.RequestObject;
+import socket.io.Reader;
+import socket.io.Writer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Client {
 
@@ -18,7 +19,8 @@ public class Client {
     private Socket socket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
-    private SyncIO syncIO;
+    private Writer writer;
+    private Reader reader;
 
     private Client(String host, int port) {
         this.host = host;
@@ -31,7 +33,6 @@ public class Client {
             System.out.println("Client port is: " + socket.getPort());
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());
-            this.syncIO = SyncIO.of(objectOutputStream, objectInputStream);
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -39,8 +40,13 @@ public class Client {
         return false;
     }
 
-    public void requestToServer() throws IOException, ClassNotFoundException {
+    public void requestToServer() throws InterruptedException, IOException {
         Scanner scanner = new Scanner(System.in);
+
+        writer = new Writer(objectOutputStream);
+        reader = new Reader(objectInputStream);
+        new Thread(writer).start();
+        new Thread(reader).start();
 
         while (true) {
             RequestObject requestObject = new RequestObject();
@@ -66,7 +72,7 @@ public class Client {
             }
 
             requestObject.setArgs(param);
-            new Thread(Worker.newWorker(requestObject, syncIO)).start();
+            new Thread(Worker.newWorker(requestObject, writer)).start();
             scanner.nextLine(); // consume left over newline
 
             System.out.println("Want to exit? Y/N");
@@ -79,8 +85,11 @@ public class Client {
         }
     }
 
-    private void exitClient() throws IOException {
-        objectOutputStream.writeObject("EXIT");
+    private void exitClient() throws InterruptedException {
+        writer.write("EXIT");
+        TimeUnit.SECONDS.sleep(2);
+        writer.interrupt();
+        reader.interrupt();
     }
 
     private boolean isExit(String isExit) {

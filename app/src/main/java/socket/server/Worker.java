@@ -1,33 +1,25 @@
 package socket.server;
 
+import socket.io.Writer;
 import socket.io.RequestObject;
 import socket.io.RequestObjectJsonMapper;
 import socket.server.manager.ManagerService;
 import socket.server.manager.ResponseFormatter;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-
 public class Worker implements Runnable {
 
-    private final ObjectOutputStream objectOutputStream;
     private final String requestAsString;
+    private final Writer writer;
 
-    public Worker(ObjectOutputStream objectOutputStream, String requestAsString) {
-        this.objectOutputStream = objectOutputStream;
+    public Worker(String requestAsString, Writer writer) {
         this.requestAsString = requestAsString;
+        this.writer = writer;
     }
 
     @Override
     public void run() {
-
         String result = execute(RequestObjectJsonMapper.readAsObject(requestAsString));
-        try {
-            objectOutputStream.writeObject(result);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
+        writer.write(result);
     }
 
     public String execute(RequestObject requestObject) {
@@ -43,7 +35,7 @@ public class Worker implements Runnable {
         return response;
     }
 
-    public static Worker newWorker(String requestAsString, ObjectOutputStream objectOutputStream) {
-        return new Worker(objectOutputStream, requestAsString);
+    public static Worker newWorker(String requestAsString, Writer writer) {
+        return new Worker(requestAsString, writer);
     }
 }
