@@ -14,6 +14,8 @@ public class ConnectionHandler implements Runnable {
     private static final String EXIT = "EXIT";
 
     private final Socket socket;
+    private ExecutorService pool;
+    private Writer writer;
 
     private ConnectionHandler(Socket socket) {
         this.socket = socket;
@@ -26,9 +28,7 @@ public class ConnectionHandler implements Runnable {
                 ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream())
         ) {
-            ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-            Writer writer = new Writer(objectOutputStream);
-            new Thread(writer).start();
+            startWriterThreadAndInitThreadPool(objectOutputStream);
             while (true) {
                 String requestAsString = (String) objectInputStream.readObject();
 
@@ -47,8 +47,16 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
+    private void startWriterThreadAndInitThreadPool(ObjectOutputStream objectOutputStream) {
+        pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        writer = new Writer(objectOutputStream);
+        writer.start();
+    }
+
     private void closeSocket() {
         try {
+            pool.shutdownNow();
+            writer.interrupt();
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
