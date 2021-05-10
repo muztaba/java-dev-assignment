@@ -22,8 +22,7 @@ public class Client {
     private ObjectInputStream objectInputStream;
     private Writer writer;
     private Reader reader;
-    private Thread writerThread;
-    private Thread readerThread;
+    private Scanner scanner;
 
     private Client(String host, int port) {
         this.host = host;
@@ -44,15 +43,14 @@ public class Client {
     }
 
     public void requestToServer() throws InterruptedException, IOException {
-        Scanner scanner = new Scanner(System.in);
+        scanner = new Scanner(System.in);
         startReaderAndWriterThread();
-
         while (true) {
-            if (wantToExitApplication(scanner)) {
+            if (wantToExitApplication()) {
                 return;
             }
 
-            RequestObject requestObject = takeInput(scanner);
+            RequestObject requestObject = takeInput();
             writer.write(RequestObjectJsonMapper.writeAsString(requestObject));
         }
     }
@@ -60,13 +58,11 @@ public class Client {
     private void startReaderAndWriterThread() {
         writer = new Writer(objectOutputStream);
         reader = new Reader(objectInputStream);
-        writerThread = new Thread(writer);
-        readerThread = new Thread(reader);
-        writerThread.start();
-        readerThread.start();
+        writer.start();
+        reader.start();
     }
 
-    private boolean wantToExitApplication(Scanner scanner) throws IOException, InterruptedException {
+    private boolean wantToExitApplication() throws IOException, InterruptedException {
         System.out.println("Want to continue? Y/N");
         String isExit = scanner.nextLine();
         if (isExit(isExit)) {
@@ -76,7 +72,7 @@ public class Client {
         return false;
     }
 
-    private RequestObject takeInput(Scanner scanner) {
+    private RequestObject takeInput() {
         RequestObject requestObject = new RequestObject();
         System.out.println("Manager name");
         String managerName = scanner.nextLine();
@@ -106,11 +102,9 @@ public class Client {
 
     private void exitClient() throws IOException, InterruptedException {
         writer.write("EXIT");
-        writerThread.interrupt();
-        readerThread.interrupt();
         TimeUnit.SECONDS.sleep(2);
-        objectInputStream.close();
-        objectOutputStream.close();
+        writer.interrupt();
+        reader.interrupt();
         socket.close();
     }
 
