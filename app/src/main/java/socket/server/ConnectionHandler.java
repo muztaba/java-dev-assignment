@@ -2,6 +2,7 @@ package socket.server;
 
 import socket.io.Writer;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -33,8 +34,6 @@ public class ConnectionHandler implements Runnable {
 
                 if (EXIT.equalsIgnoreCase(requestAsString)) {
                     System.out.println("Closing client connection...");
-                    writer.interrupt();
-                    socket.close();
                     return;
                 }
 
@@ -43,6 +42,16 @@ public class ConnectionHandler implements Runnable {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            closeSocket();
+        }
+    }
+
+    private void closeSocket() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

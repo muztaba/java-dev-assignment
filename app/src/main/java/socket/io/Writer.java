@@ -1,10 +1,11 @@
 package socket.io;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class Writer implements Runnable {
+public class Writer extends Thread {
 
     private final LinkedBlockingQueue<String> queue;
     private final ObjectOutputStream objectOutputStream;
@@ -16,15 +17,24 @@ public class Writer implements Runnable {
 
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
+        boolean busyLooping = true;
+        while (busyLooping) {
             try {
                 String str = queue.take();
                 objectOutputStream.writeObject(str);
-            } catch (InterruptedException | IOException e) {
-                e.printStackTrace();
+            } catch (InterruptedIOException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Interrupted via InterruptedIOException");
+                busyLooping = false;
+            } catch (IOException | InterruptedException e) {
+                if (!isInterrupted()) {
+                    e.printStackTrace();
+                } else {
+                    System.out.println("Interrupted");
+                }
+                busyLooping = false;
             }
         }
-
     }
 
     public void write(String str) {
@@ -32,6 +42,11 @@ public class Writer implements Runnable {
     }
 
     public void interrupt() {
-        Thread.interrupted();
+        super.interrupt();
+        try {
+            objectOutputStream.close();
+        } catch (IOException e) {
+        } // quietly close
     }
+
 }

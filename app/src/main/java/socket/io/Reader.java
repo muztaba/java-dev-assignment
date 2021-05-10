@@ -1,9 +1,10 @@
 package socket.io;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.ObjectInputStream;
 
-public class Reader implements Runnable {
+public class Reader extends Thread {
 
     private final ObjectInputStream objectInputStream;
 
@@ -13,17 +14,32 @@ public class Reader implements Runnable {
 
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
+        boolean busyLooping = true;
+        while (busyLooping) {
+
             try {
                 System.out.println((String) objectInputStream.readObject());
+            } catch (InterruptedIOException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Interrupted via InterruptedIOException");
+                busyLooping = false;
             } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-                throw new RuntimeException(e);
+                if (!isInterrupted()) {
+                    e.printStackTrace();
+                } else {
+                    System.out.println("Interrupted");
+                }
+                busyLooping = false;
             }
+
         }
     }
 
     public void interrupt() {
-        Thread.interrupted();
+        super.interrupt();
+        try {
+            objectInputStream.close();
+        } catch (IOException e) {
+        } // quietly close
     }
 }
