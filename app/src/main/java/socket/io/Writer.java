@@ -7,12 +7,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Writer extends Thread {
 
-    private final LinkedBlockingQueue<String> queue;
-    private final ObjectOutputStream objectOutputStream;
+    private final LinkedBlockingQueue<Node> queue;
 
-    public Writer(ObjectOutputStream objectOutputStream) {
+    public Writer() {
         this.queue = new LinkedBlockingQueue<>();
-        this.objectOutputStream = objectOutputStream;
     }
 
     @Override
@@ -20,8 +18,8 @@ public class Writer extends Thread {
         boolean busyLooping = true;
         while (busyLooping) {
             try {
-                String str = queue.take();
-                objectOutputStream.writeObject(str);
+                Node node = queue.take();
+                node.out.writeObject(node.string);
             } catch (InterruptedIOException e) {
                 Thread.currentThread().interrupt();
                 System.out.println("Interrupted via InterruptedIOException");
@@ -37,16 +35,18 @@ public class Writer extends Thread {
         }
     }
 
-    public void write(String str) {
-        queue.add(str);
+    public void write(String str, ObjectOutputStream out) {
+        queue.add(new Node(str, out));
     }
 
-    public void interrupt() {
-        super.interrupt();
-        try {
-            objectOutputStream.close();
-        } catch (IOException e) {
-        } // quietly close
+    private static class Node {
+        public final String string;
+        public final ObjectOutputStream out;
+
+        public Node(String string, ObjectOutputStream out) {
+            this.string = string;
+            this.out = out;
+        }
     }
 
 }

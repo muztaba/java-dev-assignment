@@ -51,12 +51,12 @@ public class Client {
             }
 
             RequestObject requestObject = takeInput();
-            writer.write(RequestObjectJsonMapper.writeAsString(requestObject));
+            writer.write(RequestObjectJsonMapper.writeAsString(requestObject), objectOutputStream);
         }
     }
 
     private void startReaderAndWriterThread() {
-        writer = new Writer(objectOutputStream);
+        writer = new Writer();
         reader = new Reader(objectInputStream);
         writer.start();
         reader.start();
@@ -101,7 +101,7 @@ public class Client {
     }
 
     private void exitClient() throws IOException, InterruptedException {
-        writer.write("EXIT");
+        writer.write("EXIT", objectOutputStream);
         TimeUnit.SECONDS.sleep(2);
         writer.interrupt();
         reader.interrupt();

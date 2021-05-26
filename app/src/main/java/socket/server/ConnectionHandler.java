@@ -1,6 +1,7 @@
 package socket.server;
 
 import socket.io.Writer;
+import socket.server.manager.ResponseFormatter;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,11 +15,12 @@ public class ConnectionHandler implements Runnable {
 
     private final Socket socket;
     private final ExecutorService workerPool;
-    private Writer writer;
+    private final Writer writer;
 
-    private ConnectionHandler(Socket socket, ExecutorService workerPool) {
+    private ConnectionHandler(Socket socket, ExecutorService workerPool, Writer writer) {
         this.socket = socket;
         this.workerPool = workerPool;
+        this.writer = writer;
     }
 
     @Override
@@ -27,7 +29,6 @@ public class ConnectionHandler implements Runnable {
                 ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream())
         ) {
-            startWriterThreadAndInitThreadPool(objectOutputStream);
             while (true) {
                 String requestAsString = (String) objectInputStream.readObject();
 
@@ -37,7 +38,15 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 System.out.println("Message from client: " + requestAsString);
-                workerPool.submit(Worker.newWorker(requestAsString, writer));
+
+                Worker worker = Worker.builder()
+                        .setRequestAsString(requestAsString)
+                        .setObjectOutputStream(objectOutputStream)
+                        .setWriter(writer)
+                        .setResponseFormatter(ResponseFormatter.FORMATTER_1)
+                        .build();
+
+                workerPool.submit(worker);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -46,22 +55,16 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    private void startWriterThreadAndInitThreadPool(ObjectOutputStream objectOutputStream) {
-        writer = new Writer(objectOutputStream);
-        writer.start();
-    }
-
     private void closeSocket() {
         try {
-            writer.interrupt();
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static ConnectionHandler of(Socket socket, ExecutorService workerPool) {
-        return new ConnectionHandler(socket, workerPool);
+    public static ConnectionHandler of(Socket socket, ExecutorService workerPool, Writer writer) {
+        return new ConnectionHandler(socket, workerPool, writer);
     }
 
 }

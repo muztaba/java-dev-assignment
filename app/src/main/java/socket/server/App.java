@@ -3,6 +3,8 @@
  */
 package socket.server;
 
+import socket.io.Writer;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -18,12 +20,16 @@ public class App {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         ExecutorService pool = Executors.newFixedThreadPool(availableProcessors);
         ExecutorService workerPool = Executors.newFixedThreadPool(availableProcessors);
+        Writer writer = new Writer();
+        writer.start();
 
         while (true) {
             System.out.println("Waiting for the client request");
             Socket socket = server.accept();
-            pool.submit(ConnectionHandler.of(socket, workerPool));
+            pool.submit(ConnectionHandler.of(socket, workerPool, writer));
         }
+
+        // TODO shutdown all thread
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
