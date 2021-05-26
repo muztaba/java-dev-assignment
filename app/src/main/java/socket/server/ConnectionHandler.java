@@ -7,19 +7,18 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ConnectionHandler implements Runnable {
 
     private static final String EXIT = "EXIT";
 
     private final Socket socket;
-    private ExecutorService pool;
+    private final ExecutorService workerPool;
     private Writer writer;
 
-    private ConnectionHandler(Socket socket) {
+    private ConnectionHandler(Socket socket, ExecutorService workerPool) {
         this.socket = socket;
-
+        this.workerPool = workerPool;
     }
 
     @Override
@@ -38,7 +37,7 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 System.out.println("Message from client: " + requestAsString);
-                pool.submit(Worker.newWorker(requestAsString, writer));
+                workerPool.submit(Worker.newWorker(requestAsString, writer));
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -48,14 +47,12 @@ public class ConnectionHandler implements Runnable {
     }
 
     private void startWriterThreadAndInitThreadPool(ObjectOutputStream objectOutputStream) {
-        pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         writer = new Writer(objectOutputStream);
         writer.start();
     }
 
     private void closeSocket() {
         try {
-            pool.shutdownNow();
             writer.interrupt();
             socket.close();
         } catch (IOException e) {
@@ -63,8 +60,8 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    public static ConnectionHandler newConnectionHandler(Socket socket) {
-        return new ConnectionHandler(socket);
+    public static ConnectionHandler of(Socket socket, ExecutorService workerPool) {
+        return new ConnectionHandler(socket, workerPool);
     }
 
 }

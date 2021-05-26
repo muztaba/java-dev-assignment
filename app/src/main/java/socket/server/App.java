@@ -15,16 +15,18 @@ public class App {
     public void startServerAndAcceptRequest() throws IOException, ClassNotFoundException {
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("Starting socket server");
-        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        ExecutorService pool = Executors.newFixedThreadPool(availableProcessors);
+        ExecutorService workerPool = Executors.newFixedThreadPool(availableProcessors);
 
         while (true) {
             System.out.println("Waiting for the client request");
             Socket socket = server.accept();
-            pool.submit(ConnectionHandler.newConnectionHandler(socket));
+            pool.submit(ConnectionHandler.of(socket, workerPool));
         }
     }
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException{
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         new App().startServerAndAcceptRequest();
     }
 }
