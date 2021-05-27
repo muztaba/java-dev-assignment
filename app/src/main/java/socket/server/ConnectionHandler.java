@@ -32,7 +32,7 @@ public class ConnectionHandler implements Runnable {
             while (true) {
                 String requestAsString = (String) objectInputStream.readObject();
 
-                if (EXIT.equalsIgnoreCase(requestAsString)) {
+                if (requestToExit(requestAsString)) {
                     System.out.println("Closing client connection...");
                     return;
                 }
@@ -53,6 +53,10 @@ public class ConnectionHandler implements Runnable {
         } finally {
             closeSocket();
         }
+    }
+
+    private boolean requestToExit(String requestAsString) {
+        return EXIT.equalsIgnoreCase(requestAsString);
     }
 
     private void closeSocket() {

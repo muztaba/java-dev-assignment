@@ -7,11 +7,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Writer extends Thread {
 
-    private final LinkedBlockingQueue<Node> queue;
-
-    public Writer() {
-        this.queue = new LinkedBlockingQueue<>();
-    }
+    private final LinkedBlockingQueue<Node> queue = new LinkedBlockingQueue<>();
 
     @Override
     public void run() {
