@@ -1,9 +1,6 @@
 package socket.client;
 
-import socket.io.RequestObject;
-import socket.io.Reader;
-import socket.io.RequestObjectJsonMapper;
-import socket.io.Writer;
+import socket.io.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -21,7 +18,7 @@ public class Client {
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
     private Writer writer;
-    private Reader reader;
+    private Reader<String> reader;
     private Scanner scanner;
 
     private Client(String host, int port) {
@@ -57,7 +54,7 @@ public class Client {
 
     private void startReaderAndWriterThread() {
         writer = new Writer();
-        reader = new Reader(objectInputStream);
+        reader = new Reader<>(objectInputStream, System.out::println);
         writer.start();
         reader.start();
     }
