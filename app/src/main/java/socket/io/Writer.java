@@ -1,7 +1,6 @@
 package socket.io;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -11,22 +10,16 @@ public class Writer extends Thread {
 
     @Override
     public void run() {
-        boolean busyLooping = true;
-        while (busyLooping) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 Node node = queue.take();
                 node.out.writeObject(node.string);
-            } catch (InterruptedIOException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                System.out.println("Interrupted via InterruptedIOException");
-                busyLooping = false;
-            } catch (IOException | InterruptedException e) {
-                if (!isInterrupted()) {
-                    e.printStackTrace();
-                } else {
-                    System.out.println("Interrupted");
-                }
-                busyLooping = false;
+                System.out.println("Shutting down writer thread...");
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
