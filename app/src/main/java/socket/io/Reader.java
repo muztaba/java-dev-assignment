@@ -10,7 +10,7 @@ public class Reader<T> extends Thread {
     private final ObjectInputStream objectInputStream;
     private final Consumer<T> consumer;
 
-    public Reader(ObjectInputStream objectInputStream, Consumer<T> consumer) {
+    private Reader(ObjectInputStream objectInputStream, Consumer<T> consumer) {
         this.objectInputStream = objectInputStream;
         this.consumer = consumer;
     }
@@ -64,7 +64,7 @@ public class Reader<T> extends Thread {
             return this;
         }
 
-        public Reader<T> createReader() {
+        public Reader<T> build() {
             return new Reader<>(objectInputStream, consumer);
         }
     }

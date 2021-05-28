@@ -58,7 +58,7 @@ public class Client {
         reader = Reader.<String>builder()
                 .setObjectInputStream(objectInputStream)
                 .setConsumer(System.out::println)
-                .createReader();
+                .build();
 
         writer.start();
         reader.start();
