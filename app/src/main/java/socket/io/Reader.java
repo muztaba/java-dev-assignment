@@ -45,4 +45,27 @@ public class Reader<T> extends Thread {
         } catch (IOException e) {
         } // quietly close
     }
+
+    public static <T> ReaderBuilder<T> builder(){
+        return new ReaderBuilder<>();
+    }
+
+    public static class ReaderBuilder<T> {
+        private ObjectInputStream objectInputStream;
+        private Consumer<T> consumer;
+
+        public ReaderBuilder<T> setObjectInputStream(ObjectInputStream objectInputStream) {
+            this.objectInputStream = objectInputStream;
+            return this;
+        }
+
+        public ReaderBuilder<T> setConsumer(Consumer<T> consumer) {
+            this.consumer = consumer;
+            return this;
+        }
+
+        public Reader<T> createReader() {
+            return new Reader<>(objectInputStream, consumer);
+        }
+    }
 }

@@ -54,7 +54,12 @@ public class Client {
 
     private void startReaderAndWriterThread() {
         writer = new Writer();
-        reader = new Reader<>(objectInputStream, System.out::println);
+
+        reader = Reader.<String>builder()
+                .setObjectInputStream(objectInputStream)
+                .setConsumer(System.out::println)
+                .createReader();
+
         writer.start();
         reader.start();
     }
